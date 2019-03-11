@@ -21,8 +21,8 @@ def get_pose(objs_info):
     for obj_info in objs_info:
         if obj_info != None:
             position = obj_info.get_position() ## (x, y, z) ##
-            orientation_e = obj_info.get_pose(format='rpy')  ## euler angle (r, p, y) ##
-            orientation_q = obj_info.get_pose(format='xyzw')  ## quaternion (x, y, z, w) ##
+            orientation_e = obj_info.get_orientation(format='rpy')  ## euler angle (r, p, y) ##
+            orientation_q = obj_info.get_orientation(format='xyzw')  ## quaternion (x, y, z, w) ##
             size = obj_info.get_size()      ## obj size (height, width, depth )
         else:
             ##sth error
@@ -78,7 +78,7 @@ def get_linear(objs_info, direction):
 
 
 def get_angular(objs_info, axis='z'):
-    """get linear velocity heat map
+    """get angular rate heat map
         Args:
             objs_info: a list of road_obj.
             orientation: a str indicates the direction 'x' or 'y'
