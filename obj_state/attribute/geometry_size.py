@@ -1,3 +1,13 @@
+"""
+Copyright (c) College of Mechatronics and Control Engineering, Shenzhen University.
+All rights reserved.
+
+Description :
+provides a class describe one of states in kinematics
+
+Author：Team Li
+"""
+
 class geometry_size(object):
     """this object describe the 3d-geometry size in
     real world, encoded by length, width and height

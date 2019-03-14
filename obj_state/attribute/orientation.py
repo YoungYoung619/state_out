@@ -1,3 +1,13 @@
+"""
+Copyright (c) College of Mechatronics and Control Engineering, Shenzhen University.
+All rights reserved.
+
+Description :
+provides a class describe one of states in kinematics
+
+Author：Team Li
+"""
+
 import math
 
 class orientation(object):

@@ -1,3 +1,13 @@
+"""
+Copyright (c) College of Mechatronics and Control Engineering, Shenzhen University.
+All rights reserved.
+
+Description :
+provides a class describe one of states in kinematics
+
+Author：Team Li
+"""
+
 class linear(object):
     """a class describe the linear speed of x, y, z in
     real world coordinate.

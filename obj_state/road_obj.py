@@ -1,8 +1,17 @@
-from obj.attribute.geometry_size import geometry_size
-from obj.attribute.orientation import orientation
-from obj.attribute.position import position
-from obj.attribute.linear import linear
-from obj.attribute.angular import angular
+"""
+Copyright (c) College of Mechatronics and Control Engineering, Shenzhen University.
+All rights reserved.
+
+Description :
+A package wihch provides some class describes the state of road objects when driving.
+
+Author：Team Li
+"""
+from obj_state.attribute.geometry_size import geometry_size
+from obj_state.attribute.orientation import orientation
+from obj_state.attribute.position import position
+from obj_state.attribute.linear import linear
+from obj_state.attribute.angular import angular
 
 import time
 import math
@@ -11,11 +20,17 @@ from enum import Enum, unique
 # road obj type #
 @unique
 class obj_type(Enum):
+    """usr can set obj type settings
+    by their own
+    """
     pedestrain = 0
     vehicle = 1
+    ## to do ##
 
+## class describe road object ##
 class road_obj(object):
-    """a class describe
+    """a class describe the road objs state, all of the states sholud
+    be under the ego-vehcile coordinate
     Example:
        ## init some vars ##
         size = (1., 2., 3.)

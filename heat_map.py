@@ -1,3 +1,14 @@
+"""
+Copyright (c) College of Mechatronics and Control Engineering, Shenzhen University.
+All rights reserved.
+
+Description :
+A package wihch provides tools for generating pixel-level thermal maps that can be
+used as states in reinforcement learning for autonomous vehicle.
+
+Author：Team Li
+"""
+
 import numpy as np
 
 ##########################
