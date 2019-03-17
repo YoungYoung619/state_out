@@ -7,6 +7,8 @@ provides a class describe one of states in kinematics
 
 Author：Team Li
 """
+from msgs.log import logger
+
 class angular(object):
     """a class describe the angular rate of x, y, z in
     real world coordinate.
@@ -51,7 +53,9 @@ class angular(object):
                 else:
                     assert type(angular) == float
             except AssertionError:
-                print('Warning: pls set angular into (x, y, z), (z,) or z with float!')
+                logger.warning('Pls set angular into (x, y, z), (z,) or z with float, but I '+
+                               'get %s'%(str(angular)))
+                #print('Warning: pls set angular into (x, y, z), (z,) or z with float!')
             else:
                 if type(angular) == tuple:
                     if len(angular) == 3:
@@ -86,8 +90,10 @@ class angular(object):
             else:
                 assert type(angular) == float
         except AssertionError:
-            print('Warning: Pls set angular into (x, y, z), (z,) or z with float!'+
-                  ' But i get %s'%(str(angular)))
+            logger.warning('Pls set angular into (x, y, z), (z,) or z with float, but I ' +
+                           'get %s' % (str(angular)))
+            # print('Warning: Pls set angular into (x, y, z), (z,) or z with float!'+
+            #       ' But i get %s'%(str(angular)))
         else:
             if type(angular) == tuple:
                 if len(angular) == 3:
@@ -117,7 +123,7 @@ class angular(object):
 
 ## for test ##
 if __name__ == "__main__":
-    a = (2., 4., 3.)
+    a = (2., 4, 3.)
     b = (1.,)
     c = angular(a)
     print(c.get())

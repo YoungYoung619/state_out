@@ -7,6 +7,8 @@ provides a class describe one of states in kinematics
 
 Author：Team Li
 """
+from msgs.log import logger
+
 
 class position(object):
     """a class describe the x, y, z in
@@ -49,8 +51,10 @@ class position(object):
                 for attr in position:
                     assert type(attr) == float
             except AssertionError:
-                print('Warning: pls set position into (x, y, z) or (x, y) with float!'+
-                      ' But i get %s' % (str(position)))
+                logger.warning('Pls set position into (x, y, z) or (x, y) with float, but I ' +
+                               'get %s' % (str(position)))
+                # print('Warning: pls set position into (x, y, z) or (x, y) with float!'+
+                #       ' But i get %s' % (str(position)))
             else:
                 if len(position) == 3:
                     self.x = position[0]
@@ -75,8 +79,8 @@ class position(object):
             for attr in position:
                 assert type(attr) == float
         except AssertionError:
-            print('Warning: pls set position into (x, y, z) or (x, y) with float!'+
-                  ' But i get %s' % (str(position)))
+            logger.warning('Pls set position into (x, y, z) or (x, y) with float, but I ' +
+                           'get %s' % (str(position)))
         else:
             if len(position) == 3:
                 self.x = position[0]
@@ -99,9 +103,9 @@ class position(object):
 
 ## for test ##
 if __name__ == "__main__":
-    a = (2., 3., 3.)
+    a = (2., 3., 3)
     b = (1., 3.)
-    c = position()
+    c = position(a)
     print(c.get())
     c.set(b)
     print(c.get())

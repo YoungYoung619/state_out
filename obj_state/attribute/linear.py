@@ -7,6 +7,8 @@ provides a class describe one of states in kinematics
 
 Author：Team Li
 """
+from msgs.log import logger
+
 
 class linear(object):
     """a class describe the linear speed of x, y, z in
@@ -49,8 +51,10 @@ class linear(object):
                 for attr in linear:
                     assert type(attr) == float
             except AssertionError:
-                print('Warning: pls set linear into (x, y, z) or (x, y) with float!'+
-                      ' But i get %s' % (str(linear)))
+                logger.warning('Pls set linear into (x, y, z) or (x, y) with float, but I ' +
+                               'get %s' % (str(linear)))
+                # print('Warning: pls set linear into (x, y, z) or (x, y) with float!'+
+                #       ' But i get %s' % (str(linear)))
             else:
                 if len(linear) == 3:
                     self.x = linear[0]
@@ -75,8 +79,8 @@ class linear(object):
             for attr in linear:
                 assert type(attr) == float
         except AssertionError:
-            print('Warning: pls set linear into (x, y, z) or (x, y) with float!'+
-                  ' But i get %s' % (str(linear)))
+            logger.warning('Pls set linear into (x, y, z) or (x, y) with float, but I ' +
+                           'get %s' % (str(linear)))
         else:
             if len(linear) == 3:
                 self.x = linear[0]

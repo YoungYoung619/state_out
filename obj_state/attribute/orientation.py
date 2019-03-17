@@ -9,6 +9,8 @@ Author：Team Li
 """
 
 import math
+from msgs.log import logger
+
 
 class orientation(object):
     """a class describe orientation, only support quaternion format,
@@ -62,8 +64,10 @@ class orientation(object):
                 for attr in orientation:
                     assert type(attr) == float
             except AssertionError:
-                print('Warning: pls set orientation into (x, y, z, w) with float!'+
-                      ' But i get %s' % (str(orientation)))
+                logger.warning('Pls set orientation into (x, y, z, w) with float, but I ' +
+                               'get %s' % (str(orientation)))
+                # print('Warning: pls set orientation into (x, y, z, w) with float!'+
+                #       ' But i get %s' % (str(orientation)))
             else:
                 self.x = orientation[0]
                 self.y = orientation[1]
@@ -82,8 +86,8 @@ class orientation(object):
             for attr in orientation:
                 assert type(attr) == float
         except AssertionError:
-            print('Warning: pls set orientation into (x, y, z, w) with float!'+
-                  ' But i get %s' % (str(orientation)))
+            logger.warning('Pls set orientation into (x, y, z, w) with float, but I ' +
+                           'get %s' % (str(orientation)))
         else:
             self.x = orientation[0]
             self.y = orientation[1]

@@ -7,6 +7,7 @@ provides a class describe one of states in kinematics
 
 Author：Team Li
 """
+from msgs.log import logger
 
 class geometry_size(object):
     """this object describe the 3d-geometry size in
@@ -47,7 +48,9 @@ class geometry_size(object):
                 for attr in size:
                     assert type(attr) == float
             except AssertionError:
-                print('Warning: pls set size into (length, width, height) with float!')
+                logger.warning('Pls set size into (length, width, height) with float, but I ' +
+                               'get %s' % (str(size)))
+                #print('Warning: pls set size into (length, width, height) with float!')
             else:
                 self.height = size[0]
                 self.width = size[1]
@@ -65,7 +68,8 @@ class geometry_size(object):
             for attr in size:
                 assert type(attr) == float
         except AssertionError:
-            print('Warning: pls set size into (length, width, height) with float!')
+            logger.warning('Pls set size into (length, width, height) with float, but I ' +
+                           'get %s' % (str(size)))
         else:
             self.height = size[0]
             self.width = size[1]
@@ -85,7 +89,7 @@ class geometry_size(object):
 ## for test ##
 if __name__ == "__main__":
     a = (2., 5., 4.)
-    b = (2., 5., 4)
+    b = (2., 5., 4.)
     c = geometry_size(size=a)
     d = geometry_size(b)
     print(c.get())

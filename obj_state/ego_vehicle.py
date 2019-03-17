@@ -10,6 +10,7 @@ Author：Team Li
 from obj_state.road_obj import road_obj
 from obj_state.road_obj import obj_type
 
+
 class ego_vehicle(road_obj):
     """a class describe ego vehicle state,
     inherit from road_obj class.
