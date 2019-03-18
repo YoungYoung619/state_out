@@ -10,6 +10,7 @@ Author：Team Li
 """
 
 import numpy as np
+from msgs.log import logger
 
 ##########################
 ######### CONFIG #########
@@ -102,7 +103,7 @@ def get_angular(objs_info, axis='z'):
     try:
         assert axis.lower() in ['x', 'y', 'z']
     except AssertionError:
-        print('Warning: pls ensure direction is "x" or "y"')
+        logger.error('Pls ensure direction is "x", "y", "z"')
         exit(1)
 
     ## init heat map##

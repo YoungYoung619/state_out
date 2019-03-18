@@ -1,6 +1,19 @@
 import time
 from obj_state.road_obj import *
 
+@unique
+class relation_state(Enum):
+    """describ the relation between ego vehicle and other obj
+    Params:
+        none_overlap:
+        one_overlap:
+        all_overlap:
+    """
+    none_overlap = 0
+    overlap_in_x = 1
+    overlap_in_y = 2
+    all_overlap = 3
+
 if __name__ == "__main__":
     """obj_state.road_obj test"""
     # ## init some vars ##
@@ -32,6 +45,3 @@ if __name__ == "__main__":
     # a = obj.get_angular()
     # t = obj.get_time_stamp()
     # type = obj.get_type()
-
-    x,y,z = (1,2,3)
-    print(type(x))
