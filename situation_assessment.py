@@ -41,13 +41,47 @@ class relation_state(Enum):
     all_overlap = 3
 
 
+def gaussian_1d(x, mean, for_what, std=.5):
+    """produce a val respresents the socre according the gaussian distribution.
+    Args:
+        x: a input val.
+        mean: the mean of gaussian distribution.
+        std: the std of gaussian distribution.
+        for_what: should be one of safety_degree
+    """
+
+    def norm(x, mu, sigma):
+        """normal gaussian function
+        """
+        pdf = math.exp(-((x - mu) ** 2) / (2 * sigma ** 2)) / (sigma * math.sqrt(2 * np.pi))
+        return pdf
+
+    assert for_what in list(safety_degree.__members__.values())
+
+    if for_what is safety_degree.dangerous:
+        if x < mean:
+            score = norm(x=mean, mu=mean, sigma=std)
+        else:
+            score = norm(x=x, mu=mean, sigma=std)
+    elif for_what is safety_degree.attentive:
+        score = norm(x=x, mu=mean, sigma=std)
+    elif for_what is safety_degree.safe:
+        if x > mean:
+            score = norm(x=mean, mu=mean, sigma=std)
+        else:
+            score = norm(x=x, mu=mean, sigma=std)
+    else:
+        raise ValueError("Error")
+
+    return score
+
+
 def _assess_one_obj_safety(ego_vehicle, road_obj):
     """assess the road object safety degree for ego vehicle
     Args:
         ego_vehicle: a class in obj_state.ego_vehicel
         road_obj: a class in obj_state.road_obj
     """
-
 
     def judge_relation_state(ego_pos, ego_size, other_pos, other_size):
         """jugde the relation between ego vehicle and other obj
@@ -146,7 +180,7 @@ def _assess_one_obj_safety(ego_vehicle, road_obj):
             other_linear: a tuple describe ego linear velocity in (x, y, z) dimention
             other_size: a tuple describe other vehicle geometry size, (h, w, d)
             dim: a string indicates calculate TTE in which dimention, must be 'xy', 'y' or 'x'.
-        Return;
+        Return:
             TTE in specific dimention
         """
         ## length ##

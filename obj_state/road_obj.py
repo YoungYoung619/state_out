@@ -12,6 +12,7 @@ from obj_state.attribute.orientation import orientation
 from obj_state.attribute.position import position
 from obj_state.attribute.linear import linear
 from obj_state.attribute.angular import angular
+from msgs.log import logger
 
 import time
 import math
@@ -127,7 +128,7 @@ class road_obj(object):
         try:
             assert type(time) == float
         except AssertionError:
-            print('Warning: pls set time through time.time()')
+            logger.warning('Pls set time through time.time()')
         self.time_stamp = time
 
 
@@ -174,7 +175,7 @@ class road_obj(object):
         try:
             assert format.lower() in ['xyzw', 'rpy']
         except AssertionError:
-            print('Warning: pls ensure format is "xyzw" or "rpy"')
+            logger.error('Pls ensure format is "xyzw" or "rpy"')
             exit(1)
 
         if format.lower() == 'xyzw':

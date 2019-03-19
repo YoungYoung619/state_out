@@ -60,7 +60,7 @@ def get_linear(objs_info, direction):
     try:
         assert direction.lower() in ['x', 'y']
     except AssertionError:
-        print('Warning: pls ensure direction is "x" or "y"')
+        logger.error('Pls ensure direction is "x" or "y", but i get '+'"%s"'%(direction))
         exit(1)
 
     ## init heat map##

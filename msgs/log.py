@@ -3,7 +3,7 @@ Copyright (c) College of Mechatronics and Control Engineering, Shenzhen Universi
 All rights reserved.
 
 Description :
-
+a singel instance of logging
 
 Author：Team Li
 """
