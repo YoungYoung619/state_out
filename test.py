@@ -28,6 +28,7 @@ class relation_state(Enum):
     overlap_in_y = 2
     all_overlap = 3
 
+
 if __name__ == "__main__":
     """obj_state.road_obj test"""
     # ## init some vars ##
@@ -71,6 +72,8 @@ if __name__ == "__main__":
     # ax.set_zlabel('z')
     # plt.show()
 
+
+    """plot the gaussian"""
     def gaussian_1d(x, mean, for_what, std=.5):
         """produce a val respresents the socre according the gaussian distribution.
         Args:
@@ -84,7 +87,7 @@ if __name__ == "__main__":
             """normal gaussian function
             """
             pdf = math.exp(-((x - mu) ** 2) / (2 * sigma ** 2)) / (sigma * math.sqrt(2 * np.pi))
-            return pdf
+            return 3*pdf
 
         assert for_what in list(safety_degree.__members__.values())
 
@@ -105,26 +108,62 @@ if __name__ == "__main__":
 
         return score
 
-
+    plt.subplot(121)
     xs = np.arange(0., 5., 0.01)
-    y = []
+    y_d = []
     for x in xs:
-        y.append(gaussian_1d(x, mean=0.15, for_what=safety_degree.dangerous))
-    plt.plot(xs, y, label="dangerous", color='red')
+        y_d.append(gaussian_1d(x, mean=1.8, for_what=safety_degree.dangerous))
+    plt.plot(xs, y_d, label="dangerous", color='red')
 
-    y = []
+    y_a = []
     for x in xs:
-        y.append(gaussian_1d(x, mean=.3, for_what=safety_degree.attentive))
-    plt.plot(xs, y, label="attentive", color='goldenrod')
+        y_a.append(gaussian_1d(x, mean=2.16, for_what=safety_degree.attentive))
+    plt.plot(xs, y_a, label="attentive", color='goldenrod')
 
-    y = []
+    y_s = []
     for x in xs:
-        y.append(gaussian_1d(x, mean=.4, for_what=safety_degree.safe))
-    plt.plot(xs, y, label="safe", color='green')
+        y_s.append(gaussian_1d(x, mean=2.88, for_what=safety_degree.safe))
+    plt.plot(xs, y_s, label="safe", color='green')
 
     plt.legend()
-    plt.title('Time distribution')
-    plt.xlabel('Time')
-    plt.ylabel('Probability')
+    plt.title('Score')
+    plt.xlabel('Time_Diff (sec)')
+    plt.ylabel('Score')
     # 输出
+    #plt.show()
+
+    """softmax"""
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+
+    def softmax(x):
+        return np.exp(x) / np.expand_dims(np.sum(np.exp(x), axis=-1),axis=-1)
+
+
+    score = np.stack([y_d, y_a, y_s], axis=-1)
+    score = softmax(score)
+    # ax = plt.subplot(122, projection='3d')
+    # ax.title('After softmax')
+    # ax.set_xlabel('Time_Diff (sec)')
+    # ax.set_ylabel('vel')
+    # ax.set_zlabel('Probability')
+    # # plt.plot(xs, score[:, 0], label="dangerous", color='red')
+    # # plt.plot(xs, score[:, 1], label="attentive", color='goldenrod')
+    # # plt.plot(xs, score[:, 2], label="dangerous", color='green')
+    # # plt.legend()
+    # # plt.show()
+    # ax.plot(x, ys=0, zs=score[:,0], label='dangerous')
+    # plt.show()
+    ax = plt.subplot(122, projection='3d')
+    plt.title("After softmax")
+    ax.set_xlabel("Time_Diff (sec)")
+    ax.set_ylabel("Vel_Diff (m/s)")
+    ax.set_zlabel("P")
+    ax.plot(xs, ys=np.zeros(shape=xs.shape), zs=score[:, 0], label='dangerous', color='red')
+    ax.plot(xs, ys=np.zeros(shape=xs.shape), zs=score[:, 1], label='attentive', color='goldenrod')
+    ax.plot(xs, ys=np.zeros(shape=xs.shape), zs=score[:, 2], label='safe', color='green')
     plt.show()
+
+
+

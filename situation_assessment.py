@@ -41,7 +41,30 @@ class relation_state(Enum):
     all_overlap = 3
 
 
-def gaussian_1d(x, mean, for_what, std=.5):
+## use to calculate theshold of safety degree ##
+weather_effect_ratio = {scene_m.weather.clear: 1.,
+                        scene_m.weather.fog: 1.2,
+                        scene_m.weather.rain: 1.2,
+                        scene_m.weather.dust: 1.2}
+road_state_ratio = {scene_m.road_state.normal: 1.,
+                    scene_m.road_state.wetness: 0.83,
+                    scene_m.road_state.snow: 0.67,
+                    scene_m.road_state.leaves: 0.91,}
+
+COMFORTABLE_DECELERATION = 1.8 ###m/s/s
+AVG_DECELERATION = 3.5 ### m/s/s
+MAX_DECELERATION = 7.5 ### m/s/s
+
+##ploy used to calculate the std and max of gaussian##
+# x = np.arange(0, 70, 10)
+# std_y = np.array([0.5, 0.9, 1.3, 1.7, 2.1, 2.5, 2.9])
+# max_y = np.array([7., 8., 10., 15., 20., 25., 30.])
+# z_std = np.polyfit(x, std_y, 4)
+# p_std = np.poly1d(z_std)
+# z_max = np.polyfit(x, max_y, 3)
+# p_max = np.poly1d(z_max)
+
+def gaussian_1d(x, mean, for_what, std, max):
     """produce a val respresents the socre according the gaussian distribution.
     Args:
         x: a input val.
@@ -54,7 +77,7 @@ def gaussian_1d(x, mean, for_what, std=.5):
         """normal gaussian function
         """
         pdf = math.exp(-((x - mu) ** 2) / (2 * sigma ** 2)) / (sigma * math.sqrt(2 * np.pi))
-        return pdf
+        return max*pdf
 
     assert for_what in list(safety_degree.__members__.values())
 
@@ -76,11 +99,14 @@ def gaussian_1d(x, mean, for_what, std=.5):
     return score
 
 
-def _assess_one_obj_safety(ego_vehicle, road_obj):
+def _assess_one_obj_safety(ego_vehicle, road_obj, weather_type=scene_m.weather.clear,
+                           road_state=scene_m.road_state.normal):
     """assess the road object safety degree for ego vehicle
     Args:
         ego_vehicle: a class in obj_state.ego_vehicel
         road_obj: a class in obj_state.road_obj
+        weather_type: when in unclear weather, it is more likely to be dangerous
+        road_state: when road is wetness, snow or leaves, it is more likely to be dangerous
     """
 
     def judge_relation_state(ego_pos, ego_size, other_pos, other_size):
@@ -142,7 +168,7 @@ def _assess_one_obj_safety(ego_vehicle, road_obj):
         else:
             ttc_in_x = (ego_pos[0] - other_pos[0] - length) / (other_linear[0] - ego_linear[0] + 1e-5)
 
-        if ego_linear[0] >= other_linear[0]:
+        if ego_linear[1] >= other_linear[1]:
             ttc_in_y = (other_pos[1] - ego_pos[1] - length) / (ego_linear[1] - other_linear[1] + 1e-5)
         else:
             ttc_in_y = (ego_pos[1] - other_pos[1] - length) / (other_linear[1] - ego_linear[1] + 1e-5)
@@ -194,7 +220,7 @@ def _assess_one_obj_safety(ego_vehicle, road_obj):
         else:
             tte_in_x = (ego_pos[0] - other_pos[0] + length) / (other_linear[0] - ego_linear[0] + 1e-5)
 
-        if ego_linear[0] >= other_linear[0]:
+        if ego_linear[1] >= other_linear[1]:
             tte_in_y = (other_pos[1] - ego_pos[1] + length) / (ego_linear[1] - other_linear[1] + 1e-5)
         else:
             tte_in_y = (ego_pos[1] - other_pos[1] + length) / (other_linear[1] - ego_linear[1] + 1e-5)
@@ -208,10 +234,15 @@ def _assess_one_obj_safety(ego_vehicle, road_obj):
         else:
             raise ValueError("Imposible get here!!! Something must wrong!!!")
 
+    def softmax(x):
+        return np.exp(x) / np.expand_dims(np.sum(np.exp(x), axis=-1),axis=-1)
+
 
     ## assert ##
     assert type(ego_vehicle) == ego_v.ego_vehicle
     assert type(road_obj) == road_o.road_obj
+    assert weather_type in list(scene_m.weather.__members__.values())
+    assert road_state in list(scene_m.road_state.__members__.values())
 
     ## init safety degree score ##
     safety_score = np.zeros(shape=[len(list(safety_degree.__members__.values()))]) ##
@@ -233,14 +264,36 @@ def _assess_one_obj_safety(ego_vehicle, road_obj):
             ## safe ##
             pass
         else:
+            vel_m_s = math.sqrt(ego_linear[0] ** 2 + ego_linear[1] ** 2)  ## m/s
+
             ## maybe unsafe ##
-            if much_bigger(math.fabs(ttc_in_y - ttc_in_x), 5.):
+            if much_bigger(math.fabs(ttc_in_y - ttc_in_x),
+                           vel_m_s/(COMFORTABLE_DECELERATION*road_state_ratio[road_state]*weather_effect_ratio[weather_type])):
                 ## safe ##
-                pass
+                return np.array([0., 0., 1.])
             else:
                 ## safe, attentive or dagerous ##
-                pass
-            pass
+                ##  we use the speedofometer to calculate the threshold of different safety degree
+                # vel_km_h = vel_m_s / .27777 ## km/h
+                # thresh_w = np.array(safe_distance_config[weather_type])*vel_km_h/vel_m_s  ##add safe_distance factor and weatehr factor
+                # thresh_ratio_r = road_state_ratio[road_state]       ##add road
+                # thresh = thresh_w*thresh_ratio_r  ##add
+
+                thresh = [vel_m_s/(MAX_DECELERATION*road_state_ratio[road_state]*weather_effect_ratio[weather_type]),
+                          vel_m_s/(AVG_DECELERATION*road_state_ratio[road_state]*weather_effect_ratio[weather_type]),
+                          vel_m_s/(COMFORTABLE_DECELERATION*road_state_ratio[road_state]*weather_effect_ratio[weather_type])]
+
+                dangerous_score = gaussian_1d(x=math.fabs(ttc_in_y - ttc_in_x),
+                                              mean=thresh[0], for_what=safety_degree.dangerous,
+                                              std=(vel_m_s*3.6)/20, max=(vel_m_s*3.6)/2)
+                attentive_score = gaussian_1d(x=math.fabs(ttc_in_y - ttc_in_x),
+                                              mean=thresh[1], for_what=safety_degree.attentive,
+                                              std=(vel_m_s*3.6)/20, max=(vel_m_s*3.6)/20/2)
+                safe_score = gaussian_1d(x=math.fabs(ttc_in_y - ttc_in_x),
+                                         mean=thresh[2], for_what=safety_degree.safe,
+                                         std=(vel_m_s*3.6)/20, max=(vel_m_s*3.6)/20/2)
+
+                return softmax(np.array([dangerous_score, attentive_score, safe_score]))
 
     elif r_state is relation_state.overlap_in_x:
         tte_in_x = time_to_escape_2d(ego_pos, ego_linear, ego_size,
@@ -265,6 +318,7 @@ def _assess_one_obj_safety(ego_vehicle, road_obj):
                 pass
             else:
                 ## safe, attentive, dangerous ##
+
                 pass
             pass
         ## to do ##

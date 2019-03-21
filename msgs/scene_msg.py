@@ -1,6 +1,25 @@
 from obj_state import ego_vehicle as ego_v
 from obj_state import road_obj as road_o
 
+from enum import Enum, unique
+
+# describe the weather type #
+@unique
+class weather(Enum):
+    clear = 0
+    rain = 1
+    fog = 2
+    dust = 3
+
+# describe the road state #
+@unique
+class road_state(Enum):
+    normal = 0
+    wetness = 1
+    snow = 2
+    leaves = 3
+
+
 class scene_msg(object):
     """a class describe secene info, including ego vehicle info,
     other road objs info.

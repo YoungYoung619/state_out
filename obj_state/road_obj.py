@@ -99,7 +99,7 @@ class road_obj(object):
     def set_linear(self, linear):
         """ set obj position
         Args:
-            linear: must be a tuple describes the speed in (x, y, z) or (x, y)
+            linear: must be a tuple describes the speed in (x, y, z) or (x, y), ## m/s
         """
         self.linear.set(linear)
 

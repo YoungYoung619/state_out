@@ -34,9 +34,9 @@ class linear(object):
         attr = s2.attr      ##(x, y, z)
     """
 
-    x = None
-    y = None
-    z = None
+    x = None        ## m/s
+    y = None        ## m/s
+    z = None        ## m/s
     attr = None  ## (x, y, z)
 
     def __init__(self, linear=None):
