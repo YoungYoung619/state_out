@@ -226,8 +226,6 @@ def plot_surface_3d(weather_type, road_state):
 
 
 if __name__ == '__main__':
-    road_state = scene_m.road_state.normal
-    weather_type = scene_m.weather.clear
-
-    plot_surface_3d(weather_type, road_state)
+    a = np.array([1,0,0])
+    print(a.astype(dtype=np.bool))
 
