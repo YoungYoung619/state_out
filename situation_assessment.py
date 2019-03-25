@@ -43,9 +43,9 @@ class relation_state(Enum):
 
 ## use to calculate theshold of safety degree ##
 weather_effect_ratio = {scene_m.weather.clear: 1.,
-                        scene_m.weather.fog: 1.2,
+                        scene_m.weather.fog: 1.4,
                         scene_m.weather.rain: 1.2,
-                        scene_m.weather.dust: 1.2}
+                        scene_m.weather.dust: 1.3}
 road_state_ratio = {scene_m.road_state.normal: 1.,
                     scene_m.road_state.wetness: 0.83,
                     scene_m.road_state.snow: 0.67,
@@ -76,6 +76,7 @@ def gaussian_1d(x, mean, for_what, std, max):
     def norm(x, mu, sigma):
         """normal gaussian function
         """
+        #print(sigma)
         pdf = math.exp(-((x - mu) ** 2) / (2 * sigma ** 2)) / (sigma * math.sqrt(2 * np.pi))
         return max*pdf
 
@@ -237,6 +238,15 @@ def _assess_one_obj_safety(ego_vehicle, road_obj, weather_type=scene_m.weather.c
     def softmax(x):
         return np.exp(x) / np.expand_dims(np.sum(np.exp(x), axis=-1),axis=-1)
 
+    def cos_vec(vec1, vec2):
+        """caculate the cos val between two vec
+        Args:
+            vec1: ndarray with a shape [n_dim]
+            vec2: ndarray with a shape [n_dim]
+        """
+        cos = np.sum(vec1*vec2) / (np.sqrt(np.sum(np.square(vec1)))*np.sqrt(np.sum(np.square(vec2))) +1e-6)
+        return cos
+
 
     ## assert ##
     assert type(ego_vehicle) == ego_v.ego_vehicle
@@ -268,10 +278,10 @@ def _assess_one_obj_safety(ego_vehicle, road_obj, weather_type=scene_m.weather.c
             vel_m_s_x = math.fabs(ego_linear[0])
             vel_m_s_y = math.fabs(ego_linear[1])
 
-            c_t_thresh = vel_m_s/COMFORTABLE_DECELERATION * road_state_ratio[road_state] * weather_effect_ratio[weather_type]
-            c_t_thresh_x = vel_m_s_x / COMFORTABLE_DECELERATION * road_state_ratio[road_state] * weather_effect_ratio[
+            c_t_thresh = (vel_m_s/COMFORTABLE_DECELERATION * road_state_ratio[road_state]) * weather_effect_ratio[weather_type]
+            c_t_thresh_x = (vel_m_s_x / COMFORTABLE_DECELERATION * road_state_ratio[road_state]) * weather_effect_ratio[
                 weather_type]
-            c_t_thresh_y = vel_m_s_y / COMFORTABLE_DECELERATION * road_state_ratio[road_state] * weather_effect_ratio[
+            c_t_thresh_y = (vel_m_s_y / COMFORTABLE_DECELERATION * road_state_ratio[road_state]) * weather_effect_ratio[
                 weather_type]
 
             ## maybe unsafe ##
@@ -289,9 +299,9 @@ def _assess_one_obj_safety(ego_vehicle, road_obj, weather_type=scene_m.weather.c
                 # thresh_ratio_r = road_state_ratio[road_state]       ##add road
                 # thresh = thresh_w*thresh_ratio_r  ##add
 
-                thresh = [vel_m_s/(MAX_DECELERATION*road_state_ratio[road_state]*weather_effect_ratio[weather_type]),
-                          vel_m_s/(AVG_DECELERATION*road_state_ratio[road_state]*weather_effect_ratio[weather_type]),
-                          vel_m_s/(COMFORTABLE_DECELERATION*road_state_ratio[road_state]*weather_effect_ratio[weather_type])]
+                thresh = [(vel_m_s/(MAX_DECELERATION*road_state_ratio[road_state])*weather_effect_ratio[weather_type]),
+                          (vel_m_s/(AVG_DECELERATION*road_state_ratio[road_state])*weather_effect_ratio[weather_type]),
+                          (vel_m_s/(COMFORTABLE_DECELERATION*road_state_ratio[road_state])*weather_effect_ratio[weather_type])]
 
                 dangerous_score = gaussian_1d(x=math.fabs(ttc_in_y - ttc_in_x),
                                               mean=thresh[0], for_what=safety_degree.dangerous,
@@ -330,16 +340,16 @@ def _assess_one_obj_safety(ego_vehicle, road_obj, weather_type=scene_m.weather.c
             #     return np.array([0., 0., 1.])
             if tte_in_x >= ttc_in_y:
                 if much_bigger(ttc_in_y,
-                               vel_m_s_y / (COMFORTABLE_DECELERATION * road_state_ratio[road_state] \
+                               (vel_m_s_y / ((COMFORTABLE_DECELERATION * road_state_ratio[road_state])) \
                                             * weather_effect_ratio[weather_type])):
                     ## safe ##
                     return np.array([0., 0., 1.])
                 else:
                     ## safe, attentive, dangerous ##
                     thresh = [
-                        vel_m_s_y / (MAX_DECELERATION * road_state_ratio[road_state] * weather_effect_ratio[weather_type]),
-                        vel_m_s_y / (AVG_DECELERATION * road_state_ratio[road_state] * weather_effect_ratio[weather_type]),
-                        vel_m_s_y / (COMFORTABLE_DECELERATION * road_state_ratio[road_state] * weather_effect_ratio[
+                        (vel_m_s_y / (MAX_DECELERATION * road_state_ratio[road_state]) * weather_effect_ratio[weather_type]),
+                        (vel_m_s_y / (AVG_DECELERATION * road_state_ratio[road_state]) * weather_effect_ratio[weather_type]),
+                        (vel_m_s_y / (COMFORTABLE_DECELERATION * road_state_ratio[road_state]) * weather_effect_ratio[
                             weather_type])]
 
                     dangerous_score = gaussian_1d(x=ttc_in_y,
@@ -355,16 +365,16 @@ def _assess_one_obj_safety(ego_vehicle, road_obj, weather_type=scene_m.weather.c
                     return softmax(np.array([dangerous_score, attentive_score, safe_score]))
             else:
                 if much_bigger(ttc_in_y,
-                               vel_m_s_y / (COMFORTABLE_DECELERATION * road_state_ratio[road_state] \
+                               (vel_m_s_y / (COMFORTABLE_DECELERATION * road_state_ratio[road_state]) \
                                             * weather_effect_ratio[weather_type])):
                     ## safe ##
                     return np.array([0., 0., 1.])
                 else:
-                    thresh = [vel_m_s / (
-                                MAX_DECELERATION * road_state_ratio[road_state] * weather_effect_ratio[weather_type]),
-                              vel_m_s / (AVG_DECELERATION * road_state_ratio[road_state] * weather_effect_ratio[
+                    thresh = [(vel_m_s / (
+                                MAX_DECELERATION * road_state_ratio[road_state]) * weather_effect_ratio[weather_type]),
+                              (vel_m_s / (AVG_DECELERATION * road_state_ratio[road_state]) * weather_effect_ratio[
                                   weather_type]),
-                              vel_m_s / (COMFORTABLE_DECELERATION * road_state_ratio[road_state] * weather_effect_ratio[
+                              (vel_m_s / (COMFORTABLE_DECELERATION * road_state_ratio[road_state]) * weather_effect_ratio[
                                   weather_type])]
 
                     ## safe attentive dangerous ##
@@ -389,7 +399,7 @@ def _assess_one_obj_safety(ego_vehicle, road_obj, weather_type=scene_m.weather.c
         try:
             assert tte_in_y >= 0.
         except AssertionError:
-            logger.warning('Get a negative tte val(%f) in x, something may be wrong!' % (tte_in_x))
+            logger.warning('Get a negative tte val(%f) in y, something may be wrong!' % (tte_in_y))
 
         if ttc_in_x < 0.:
             ## safe ##
@@ -405,18 +415,18 @@ def _assess_one_obj_safety(ego_vehicle, road_obj, weather_type=scene_m.weather.c
             #     return np.array([0., 0., 1.])
             if tte_in_y >= ttc_in_x:
                 if much_bigger(ttc_in_x,
-                               vel_m_s_x / (COMFORTABLE_DECELERATION * road_state_ratio[road_state] \
+                               (vel_m_s_x / (COMFORTABLE_DECELERATION * road_state_ratio[road_state]) \
                                             * weather_effect_ratio[weather_type])):
                     ## safe ##
                     return np.array([0., 0., 1.])
                 else:
                     ## safe, attentive, dangerous ##
                     thresh = [
-                        vel_m_s_x / (MAX_DECELERATION * road_state_ratio[road_state] * weather_effect_ratio[
+                        (vel_m_s_x / (MAX_DECELERATION * road_state_ratio[road_state]) * weather_effect_ratio[
                             weather_type]),
-                        vel_m_s_x / (AVG_DECELERATION * road_state_ratio[road_state] * weather_effect_ratio[
+                        (vel_m_s_x / (AVG_DECELERATION * road_state_ratio[road_state]) * weather_effect_ratio[
                             weather_type]),
-                        vel_m_s_x / (COMFORTABLE_DECELERATION * road_state_ratio[road_state] * weather_effect_ratio[
+                        (vel_m_s_x / (COMFORTABLE_DECELERATION * road_state_ratio[road_state]) * weather_effect_ratio[
                             weather_type])]
 
                     dangerous_score = gaussian_1d(x=ttc_in_x,
@@ -432,16 +442,16 @@ def _assess_one_obj_safety(ego_vehicle, road_obj, weather_type=scene_m.weather.c
                     return softmax(np.array([dangerous_score, attentive_score, safe_score]))
             else:
                 if much_bigger(ttc_in_x,
-                               vel_m_s_x / (COMFORTABLE_DECELERATION * road_state_ratio[road_state] \
+                               (vel_m_s_x / (COMFORTABLE_DECELERATION * road_state_ratio[road_state]) \
                                             * weather_effect_ratio[weather_type])):
                     ## safe ##
                     return np.array([0., 0., 1.])
                 else:
-                    thresh = [vel_m_s / (
-                            MAX_DECELERATION * road_state_ratio[road_state] * weather_effect_ratio[weather_type]),
-                              vel_m_s / (AVG_DECELERATION * road_state_ratio[road_state] * weather_effect_ratio[
+                    thresh = [(vel_m_s / (
+                            MAX_DECELERATION * road_state_ratio[road_state]) * weather_effect_ratio[weather_type]),
+                              (vel_m_s / (AVG_DECELERATION * road_state_ratio[road_state]) * weather_effect_ratio[
                                   weather_type]),
-                              vel_m_s / (COMFORTABLE_DECELERATION * road_state_ratio[road_state] * weather_effect_ratio[
+                              (vel_m_s / (COMFORTABLE_DECELERATION * road_state_ratio[road_state]) * weather_effect_ratio[
                                   weather_type])]
 
                     ## safe attentive dangerous ##
@@ -456,13 +466,56 @@ def _assess_one_obj_safety(ego_vehicle, road_obj, weather_type=scene_m.weather.c
                                              std=(vel_m_s * 3.6) / 20, max=(vel_m_s * 3.6) / 2)
                     return np.array([dangerous_score, attentive_score, safe_score])
     elif r_state is relation_state.all_overlap:
-        pass
+        ## length ##
+        ego_vehicle_radius = math.sqrt((ego_size[1] / 2) ** 2 + (ego_size[2] / 2) ** 2)
+        other_obj_radius = math.sqrt((other_size[1] / 2) ** 2 + (other_size[2] / 2) ** 2)
+        length = ego_vehicle_radius + other_obj_radius
+
+        ## pos_vec ##
+        ego_pos_vec = np.array([ego_pos[0], ego_pos[1]])
+        other_pos_vec = np.array([other_pos[0], other_pos[1]])
+        pos_vec = ego_pos_vec - other_pos_vec
+        pos_scalar = np.sqrt(np.sum(np.square(pos_vec)))
+
+        ## vel_vec ##
+        ego_vel_vec = np.array([ego_linear[0], ego_linear[1]])
+        other_vel_vec = np.array([other_linear[0], other_linear[1]])
+        vel_vex =  other_vel_vec - ego_vel_vec
+        vel_scalar = np.sqrt(np.sum(np.square(vel_vex)))
+        ego_vel_scalar = np.sqrt(np.sum(np.square(ego_vel_vec))) ## m/s
+
+        cos = cos_vec(pos_vec, vel_vex)
+
+        if cos <= 0.:
+            ##means the distance between ego and other obj would increase.
+            return np.array([0., 0., 1.])
+        else:
+            ##means the distance between ego and other obj would decrease.
+            vel_rel = vel_scalar * cos
+            ttc = (pos_scalar - length) / vel_rel
+
+            ## safe, attentive, dangerous ##
+            thresh = [
+                (ego_vel_scalar / (MAX_DECELERATION * road_state_ratio[road_state]) * weather_effect_ratio[
+                    weather_type]),
+                (ego_vel_scalar / (AVG_DECELERATION * road_state_ratio[road_state]) * weather_effect_ratio[
+                    weather_type]),
+                (ego_vel_scalar / (COMFORTABLE_DECELERATION * road_state_ratio[road_state]) * weather_effect_ratio[
+                    weather_type])]
+
+            dangerous_score = gaussian_1d(x=ttc,
+                                          mean=thresh[0], for_what=safety_degree.dangerous,
+                                          std=(ego_vel_scalar * 3.6) / 20, max=(ego_vel_scalar * 3.6) / 2)
+            attentive_score = gaussian_1d(x=ttc,
+                                          mean=thresh[1], for_what=safety_degree.attentive,
+                                          std=(ego_vel_scalar * 3.6) / 20, max=(ego_vel_scalar * 3.6) / 2)
+            safe_score = gaussian_1d(x=ttc,
+                                     mean=thresh[2], for_what=safety_degree.safe,
+                                     std=(ego_vel_scalar * 3.6) / 20, max=(ego_vel_scalar * 3.6) / 2)
+
+            return softmax(np.array([dangerous_score, attentive_score, safe_score]))
+
     else:
         raise ValueError("Imposible get here!!! Something must wrong!!!")
-    # ego_v_x, ego_v_y, ego_v_z = ego_vehicle.get_linear()
-    # other_v_x, other_v_y, other_v_z = road_obj.get_linear()
-    #
-    # ttc_x = (ego_x - other_x)/(ego_v_x - other_v_x)
-    # ttc_y = (ego_y - other_y)/(ego_v_y - other_v_y)
 
 
