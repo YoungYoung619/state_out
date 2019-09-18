@@ -52,8 +52,8 @@ road_state_ratio = {scene_m.road_state.normal: 1.,
                     scene_m.road_state.leaves: 0.91,}
 
 COMFORTABLE_DECELERATION = 1.8 ###m/s/s
-AVG_DECELERATION = 3.5 ### m/s/s
-MAX_DECELERATION = 7.5 ### m/s/s
+AVG_DECELERATION = 4 ### m/s/s
+MAX_DECELERATION = 13 ### m/s/s
 
 ##ploy used to calculate the std and max of gaussian##
 # x = np.arange(0, 70, 10)
@@ -108,6 +108,8 @@ def _assess_one_obj_safety(ego_vehicle, road_obj, weather_type=scene_m.weather.c
         road_obj: a class in obj_state.road_obj
         weather_type: when in unclear weather, it is more likely to be dangerous
         road_state: when road is wetness, snow or leaves, it is more likely to be dangerous
+    Return:
+        [Dangerous score, attentive score, safe score]
     """
 
     def judge_relation_state(ego_pos, ego_size, other_pos, other_size):
@@ -331,8 +333,8 @@ def _assess_one_obj_safety(ego_vehicle, road_obj, weather_type=scene_m.weather.c
             return np.array([0., 0., 1.])
         else:
             vel_m_s = math.sqrt(ego_linear[0] ** 2 + ego_linear[1] ** 2)  ## m/s
-            vel_m_s_x = math.fabs(ego_linear[0])
-            vel_m_s_y = math.fabs(ego_linear[1])
+            vel_m_s_x = math.fabs(ego_linear[0] - other_linear[1])
+            vel_m_s_y = math.fabs(ego_linear[1] - other_linear[1])
 
             # if much_bigger(ttc_in_y - tte_in_x,
             #                vel_m_s/(COMFORTABLE_DECELERATION*road_state_ratio[road_state]*weather_effect_ratio[weather_type])):
@@ -387,7 +389,7 @@ def _assess_one_obj_safety(ego_vehicle, road_obj, weather_type=scene_m.weather.c
                     safe_score = gaussian_1d(x=math.fabs(ttc_in_y - tte_in_x),
                                              mean=thresh[2], for_what=safety_degree.safe,
                                              std=(vel_m_s * 3.6) / 20, max=(vel_m_s * 3.6) / 2)
-                    return np.array([dangerous_score, attentive_score, safe_score])
+                    return softmax(np.array([dangerous_score, attentive_score, safe_score]))
 
 
     elif r_state is relation_state.overlap_in_y:
@@ -406,8 +408,8 @@ def _assess_one_obj_safety(ego_vehicle, road_obj, weather_type=scene_m.weather.c
             return np.array([0., 0., 1.])
         else:
             vel_m_s = math.sqrt(ego_linear[0] ** 2 + ego_linear[1] ** 2)  ## m/s
-            vel_m_s_x = math.fabs(ego_linear[0])
-            vel_m_s_y = math.fabs(ego_linear[1])
+            vel_m_s_x = math.fabs(ego_linear[0] - other_linear[0])
+            vel_m_s_y = math.fabs(ego_linear[1] - other_linear[0])
 
             # if much_bigger(ttc_in_y - tte_in_x,
             #                vel_m_s/(COMFORTABLE_DECELERATION*road_state_ratio[road_state]*weather_effect_ratio[weather_type])):
@@ -464,7 +466,7 @@ def _assess_one_obj_safety(ego_vehicle, road_obj, weather_type=scene_m.weather.c
                     safe_score = gaussian_1d(x=math.fabs(ttc_in_x - tte_in_y),
                                              mean=thresh[2], for_what=safety_degree.safe,
                                              std=(vel_m_s * 3.6) / 20, max=(vel_m_s * 3.6) / 2)
-                    return np.array([dangerous_score, attentive_score, safe_score])
+                    return softmax(np.array([dangerous_score, attentive_score, safe_score]))
     elif r_state is relation_state.all_overlap:
         ## length ##
         ego_vehicle_radius = math.sqrt((ego_size[1] / 2) ** 2 + (ego_size[2] / 2) ** 2)
@@ -519,3 +521,16 @@ def _assess_one_obj_safety(ego_vehicle, road_obj, weather_type=scene_m.weather.c
         raise ValueError("Imposible get here!!! Something must wrong!!!")
 
 
+if __name__ == '__main__':
+    ego_v_state = ego_v.ego_vehicle()
+    ego_v_state.set_position(position=(0., 0., 0.))
+    ego_v_state.set_linear(linear=(15., 1., 0.))
+    ego_v_state.set_size(size=(1.3, 1.5, 4.))
+
+    road_obj_state = road_o.road_obj()
+    road_obj_state.set_position(position=(50., 0., 0.))
+    road_obj_state.set_linear(linear=(1., 0., 0.))
+    road_obj_state.set_size(size=(1.3, 1.5, 4.))
+
+    safety_degree = _assess_one_obj_safety(ego_vehicle=ego_v_state, road_obj=road_obj_state)
+    pass
