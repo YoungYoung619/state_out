@@ -79,7 +79,7 @@ def plot_distribution_each_degree_2d(vel_km_h, weather_type, road_state, show=Tr
         plt.plot(xs, y_s, label="safe", color='green')
         plt.legend()
         plt.title('Score')
-        plt.xlabel('Time_Diff (sec)')
+        plt.xlabel('TTC (sec)')
         plt.ylabel('Score')
 
         plt.subplot(122)
@@ -88,7 +88,7 @@ def plot_distribution_each_degree_2d(vel_km_h, weather_type, road_state, show=Tr
         plt.plot(xs, probability[:, 2], label="safe", color='green')
         plt.legend()
         plt.title('After Softmax')
-        plt.xlabel('Time_Diff (sec)')
+        plt.xlabel('TTC (sec)')
         plt.ylabel('Probability')
         plt.show()
     else:
@@ -108,20 +108,20 @@ def plot_distribution_each_degree_3d(xs, probability, vel_km_h, axes):
         plt.suptitle("Weather:%s Road:%s" % (weather_title[weather_type], road_title[road_state]))
         ax = plt.subplot(131, projection='3d')
         plt.title("Dangerous Distribution")
-        ax.set_xlabel("Time_Diff (sec)")
-        ax.set_ylabel("Vel_Diff (km/h)")
+        ax.set_xlabel("TTC (sec)")
+        ax.set_ylabel("Velocity (km/h)")
         ax.set_zlabel("Probability")
 
         ax1 = plt.subplot(132, projection='3d')
         plt.title("Attentive Distribution")
-        ax1.set_xlabel("Time_Diff (sec)")
-        ax1.set_ylabel("Vel_Diff (km/h)")
+        ax1.set_xlabel("TTC (sec)")
+        ax1.set_ylabel("Velocity (km/h)")
         ax1.set_zlabel("Probability")
 
         ax2 = plt.subplot(133, projection='3d')
         plt.title("Dangerous Distribution")
-        ax2.set_xlabel("Time_Diff (sec)")
-        ax2.set_ylabel("Vel_Diff (km/h)")
+        ax2.set_xlabel("TTC (sec)")
+        ax2.set_ylabel("Velocity (km/h)")
         ax2.set_zlabel("Probability")
 
 
@@ -162,8 +162,8 @@ def plot_surface_3d(weather_type, road_state):
                    (vel_m_s / (AVG_DECELERATION * road_state_ratio[road_state]) * weather_effect_ratio[weather_type]),
                     (vel_m_s / (COMFORTABLE_DECELERATION * road_state_ratio[road_state]) * weather_effect_ratio[weather_type])]
 
-        # xs = np.arange(0., thresh[2], thresh[2]/200.+1e-5) ## time_diff
-        xs = np.arange(0., 50, 50 / 200. + 1e-5)  ## time_diff
+        # xs = np.arange(0., thresh[2], thresh[2]/200.+1e-5) ## TTC
+        xs = np.arange(0., 50, 50 / 200. + 1e-5)  ## TTC
         y_d = []
         for x in xs:
             y_d.append(gaussian_1d(x, mean=thresh[0], for_what=safety_degree.dangerous,
@@ -222,8 +222,8 @@ def plot_surface_3d(weather_type, road_state):
     plt.suptitle("Weather:%s Road:%s" % (weather_title[weather_type], road_title[road_state]))
     ax = plt.gca(projection='3d')
     plt.title("Distribution Surface")
-    ax.set_xlabel("Time_Diff (sec)")
-    ax.set_ylabel("Vel_Diff (km/h)")
+    ax.set_xlabel("TTC (sec)")
+    ax.set_ylabel("Velocity (km/h)")
     ax.set_zlabel("Probability")
 
     ax.scatter(x_d, y_d, z_d, color="red", s=1)
@@ -256,8 +256,8 @@ def plot_surface_2d(weather_type, road_state):
                   (vel_m_s / (COMFORTABLE_DECELERATION * road_state_ratio[road_state]) * weather_effect_ratio[
                       weather_type])]
 
-        #xs = np.arange(0., thresh[2], thresh[2]/200.+1e-5) ## time_diff
-        xs = np.arange(0., 40, 40 / 1000.)  ## time_diff
+        #xs = np.arange(0., thresh[2], thresh[2]/200.+1e-5) ## TTC
+        xs = np.arange(0., 40, 40 / 1000.)  ## TTC
         y_d = []
         for x in xs:
             y_d.append(gaussian_1d(x, mean=thresh[0], for_what=safety_degree.dangerous,
@@ -323,9 +323,29 @@ def plot_surface_2d(weather_type, road_state):
 if __name__ == '__main__':
     road_state = scene_m.road_state.normal
     weather_type = scene_m.weather.clear
-    vel_km_h = 100
 
-    plot_distribution_each_degree_2d(vel_km_h=vel_km_h,
-                                     weather_type=weather_type,
-                                     road_state=road_state, show=True)
+    plt.suptitle("Weather:%s Road:%s" % (weather_title[weather_type], road_title[road_state]))
+    ax = plt.subplot(131, projection='3d')
+    plt.title("Dangerous Distribution")
+    ax.set_xlabel("TTC (sec)")
+    ax.set_ylabel("Velocity (km/h)")
+    ax.set_zlabel("Probability")
+
+    ax1 = plt.subplot(132, projection='3d')
+    plt.title("Attentive Distribution")
+    ax1.set_xlabel("TTC (sec)")
+    ax1.set_ylabel("Velocity (km/h)")
+    ax1.set_zlabel("Probability")
+
+    ax2 = plt.subplot(133, projection='3d')
+    plt.title("Dangerous Distribution")
+    ax2.set_xlabel("TTC (sec)")
+    ax2.set_ylabel("Velocity (km/h)")
+    ax2.set_zlabel("Probability")
+
+    for vel_km_h in range(170):
+        xs, score = plot_distribution_each_degree_2d(vel_km_h=vel_km_h,
+                                                     weather_type=weather_type, road_state=road_state, show=False)
+        plot_distribution_each_degree_3d(xs, score, vel_km_h, [ax, ax1, ax2])
+    plt.show()
 
