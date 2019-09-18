@@ -96,6 +96,7 @@ class road_obj(object):
         """
         self.position.set(position)
 
+
     def set_linear(self, linear):
         """ set obj position
         Args:
@@ -119,6 +120,7 @@ class road_obj(object):
                     represents angular rate in each axis.
         """
         self.angular.set(angular)
+
 
     def set_time_stamp(self, time):
         """set time stamp
