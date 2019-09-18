@@ -165,11 +165,16 @@ if __name__ == "__main__":
     # ax.plot(xs, ys=np.zeros(shape=xs.shape), zs=score[:, 2], label='safe', color='green')
     # plt.show()
 
-    ego_pos_vec = np.array([100, 100])
-    other_pos_vec = np.array([200, 200])
-    pos_vec = ego_pos_vec - other_pos_vec
-    distance_2_collision = np.sqrt(np.sum(np.square(pos_vec)))
-    print(distance_2_collision)
+    # ego_pos_vec = np.array([100, 100])
+    # other_pos_vec = np.array([200, 200])
+    # pos_vec = ego_pos_vec - other_pos_vec
+    # distance_2_collision = np.sqrt(np.sum(np.square(pos_vec)))
+    # print(distance_2_collision)
+
+    a = -0.5235
+    r_matix = np.array([[math.cos(a), -math.sin(a)], [math.sin(a), math.cos(a)]])
+    p = np.matmul(np.array([1, 0]), r_matix)
+    pass
 
 
 
