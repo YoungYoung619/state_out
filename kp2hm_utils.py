@@ -31,7 +31,7 @@ def heat_map(img_size, points, sigma):
     z = np.swapaxes(np.array(np.meshgrid(x, y)), axis1=0, axis2=2)
     z = np.swapaxes(z, axis1=0, axis2=1)
     heat_map = np.array([gaussian_2d(z, point, sigma=sigma) for point in points])
-    heat_map = np.sum(heat_map, axis=0)
+    heat_map = np.max(heat_map, axis=0)
     return heat_map/np.max(heat_map)
 
 
