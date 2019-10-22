@@ -23,7 +23,7 @@ import msgs.scene_msg as scene_m
 from obj_state import ego_vehicle as ego_v
 from obj_state import road_obj as road_o
 from msgs.log import logger
-from situation_assessment import _assess_one_obj_safety
+from situation_assessment import _assess_one_obj_threat_score
 
 from kp2hm_utils import *
 import numpy as np
@@ -129,7 +129,7 @@ def produce_heat_map(ego, others, h_type, hm_size=(224, 224), consider_range=50)
             road_obj_state.set_linear(linear=velocity)
             road_obj_state.set_size(size=size)
 
-            safety_degree = _assess_one_obj_safety(ego_vehicle=ego_v_state, road_obj=road_obj_state)
+            safety_degree = _assess_one_obj_threat_score(ego_vehicle=ego_v_state, road_obj=road_obj_state)
             max_index = np.argmax(np.array(safety_degree))
             if max_index == ['danger', 'attentive', 'safe'].index(h_type):
                 relative_x = int(location[0] - ego_location[0])*(hm_size[1]//consider_range//2)
