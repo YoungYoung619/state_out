@@ -99,8 +99,16 @@ def gaussian_1d(x, mean, for_what, std, max):
 
     return score
 
+def _score_2_threat_degree(score):
+    if np.argmax(score) == 0:
+        return safety_degree.dangerous
+    elif np.argmax(score) == 1:
+        return safety_degree.attentive
+    else:
+        return safety_degree.safe
 
-def _assess_one_obj_safety(ego_vehicle, road_obj, weather_type=scene_m.weather.clear,
+
+def _assess_one_obj_threat_score(ego_vehicle, road_obj, weather_type=scene_m.weather.clear,
                            road_state=scene_m.road_state.normal):
     """assess the road object safety degree for ego vehicle
     Args:
@@ -217,16 +225,16 @@ def _assess_one_obj_safety(ego_vehicle, road_obj, weather_type=scene_m.weather.c
         other_obj_radius = math.sqrt((other_size[1] / 2) ** 2 + (other_size[2] / 2) ** 2)
         length = ego_vehicle_radius + other_obj_radius
 
-        ## 1e-5 is to avoid zero-divide error ##
+        ## 1e-8 is to avoid zero-divide error ##
         if ego_linear[0] >= other_linear[0]:
-            tte_in_x = (other_pos[0] - ego_pos[0] + length) / (ego_linear[0] - other_linear[0] + 1e-5)
+            tte_in_x = (other_pos[0] - ego_pos[0] + length) / (ego_linear[0] - other_linear[0] + 1e-8)
         else:
-            tte_in_x = (ego_pos[0] - other_pos[0] + length) / (other_linear[0] - ego_linear[0] + 1e-5)
+            tte_in_x = (ego_pos[0] - other_pos[0] + length) / (other_linear[0] - ego_linear[0] + 1e-8)
 
         if ego_linear[1] >= other_linear[1]:
-            tte_in_y = (other_pos[1] - ego_pos[1] + length) / (ego_linear[1] - other_linear[1] + 1e-5)
+            tte_in_y = (other_pos[1] - ego_pos[1] + length) / (ego_linear[1] - other_linear[1] + 1e-8)
         else:
-            tte_in_y = (ego_pos[1] - other_pos[1] + length) / (other_linear[1] - ego_linear[1] + 1e-5)
+            tte_in_y = (ego_pos[1] - other_pos[1] + length) / (other_linear[1] - ego_linear[1] + 1e-8)
 
         if dim == 'xy':
             return tte_in_x, tte_in_y
@@ -305,13 +313,13 @@ def _assess_one_obj_safety(ego_vehicle, road_obj, weather_type=scene_m.weather.c
                           (vel_m_s/(AVG_DECELERATION*road_state_ratio[road_state])*weather_effect_ratio[weather_type]),
                           (vel_m_s/(COMFORTABLE_DECELERATION*road_state_ratio[road_state])*weather_effect_ratio[weather_type])]
 
-                dangerous_score = gaussian_1d(x=math.fabs(ttc_in_y - ttc_in_x),
+                dangerous_score = gaussian_1d(x=max(ttc_in_y, ttc_in_x),
                                               mean=thresh[0], for_what=safety_degree.dangerous,
                                               std=(vel_m_s*3.6)/20, max=(vel_m_s*3.6)/2)
-                attentive_score = gaussian_1d(x=math.fabs(ttc_in_y - ttc_in_x),
+                attentive_score = gaussian_1d(x=max(ttc_in_y, ttc_in_x),
                                               mean=thresh[1], for_what=safety_degree.attentive,
                                               std=(vel_m_s*3.6)/20, max=(vel_m_s*3.6)/2)
-                safe_score = gaussian_1d(x=math.fabs(ttc_in_y - ttc_in_x),
+                safe_score = gaussian_1d(x=max(ttc_in_y, ttc_in_x),
                                          mean=thresh[2], for_what=safety_degree.safe,
                                          std=(vel_m_s*3.6)/20, max=(vel_m_s*3.6)/2)
 
