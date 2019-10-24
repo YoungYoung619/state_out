@@ -10,6 +10,7 @@ Author：Team Li
 import sys, os, glob, random, threading, time
 from situation_assessment import _assess_one_obj_threat_score
 from situation_assessment import _score_2_threat_degree
+from situation_assessment import comfort_level_scores
 from situation_assessment import safety_degree
 from obj_state import ego_vehicle as ego_v
 from obj_state import road_obj as road_o
@@ -22,6 +23,7 @@ except:
 from carla_utils.logging import logger
 from carla_utils.world_ops import *
 
+from mpl_toolkits.axisartist.parasite_axes import HostAxes, ParasiteAxes
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import interpolate
@@ -131,10 +133,10 @@ def plot_threat_curve(thread_record_d, thread_record_a, thread_record_s):
     axis_font_dict = {'family': 'Times New Roman',
                        'color':  'black',
                        'weight': 'normal',
-                       'size': 28}
+                       'size': 30}
     legend_font = {'family': 'Times New Roman',
                    'weight': 'normal',
-                   'size': 28,
+                   'size': 30,
              }
 
     thread_record_s = np.array(thread_record_s)
@@ -180,19 +182,185 @@ def plot_threat_curve(thread_record_d, thread_record_a, thread_record_s):
     ynew_a = savitzky_golay(ynew_a, 21, order=2)
     ynew_d = savitzky_golay(ynew_d, 21, order=2)
 
+    plt.figure(figsize=(16, 7))
     plt.plot(xnew, np.clip(ynew_s, 0., 1.), color="green", label="Safe", linewidth=2)
-    plt.plot(xnew, np.clip(ynew_a, 0., 1.), color="orange", label="Attentive", linewidth=2)
-    plt.plot(xnew, np.clip(ynew_d, 0., 1.), color="red", label="Dangerous", linewidth=2)
+    plt.fill_between(xnew, 0, np.clip(ynew_s, 0., 1.), alpha=0.2, facecolor='green')
 
-    plt.title('Likehood of Different Threat Degree', fontdict=title_font_dict)
+    plt.plot(xnew, np.clip(ynew_a, 0., 1.), color="orange", label="Attentive", linewidth=2)
+    plt.fill_between(xnew, 0, np.clip(ynew_a, 0., 1.), alpha=0.2, facecolor='orange')
+
+    plt.plot(xnew, np.clip(ynew_d, 0., 1.), color="red", label="Dangerous", linewidth=2)
+    plt.fill_between(xnew, 0, np.clip(ynew_d, 0., 1.), alpha=0.2, facecolor='red')
+
+    plt.title('Likelihood of Different Threat Degree', fontdict=title_font_dict)
     plt.xlabel('Time (s)', fontdict=axis_font_dict)
-    plt.ylabel('Likehood', fontdict=axis_font_dict)
+    plt.ylabel('Likelihood', fontdict=axis_font_dict)
     plt.tick_params(labelsize=20)
     plt.legend(prop=legend_font)
     plt.ylim(0., 1.)
     left, right = plt.xlim()
     plt.xlim(0., right)
     plt.show()
+
+
+def plot_comfort_curve(comfort_level_m, comfort_level_a, comfort_level_c):
+    title_font_dict = {'family': 'Times New Roman',
+                       'color':  'black',
+                       'weight': 'normal',
+                       'size': 30}
+
+    axis_font_dict = {'family': 'Times New Roman',
+                       'color':  'black',
+                       'weight': 'normal',
+                       'size': 30}
+    legend_font = {'family': 'Times New Roman',
+                   'weight': 'normal',
+                   'size': 30,
+             }
+
+    comfort_level_c = np.array(comfort_level_c)
+    comfort_level_a = np.array(comfort_level_a)
+    comfort_level_m = np.array(comfort_level_m)
+    end = comfort_level_c[:, 0][len(comfort_level_c[:, 0]) - 1]
+
+    step = 4
+    comfort_level_c = comfort_level_c[0:int(end):step]
+    comfort_level_a = comfort_level_a[0:int(end):step]
+    comfort_level_m = comfort_level_m[0:int(end):step]
+
+    # plt.plot(thread_record_s[:, 0] / 10., thread_record_s[:, 1], color="green")
+    # plt.plot(thread_record_a[:, 0] / 10., thread_record_a[:, 1], color="orange")
+    # plt.plot(thread_record_d[:, 0] / 10., thread_record_d[:, 1], color="red")
+    # plt.ylim(0, 1.1)
+    # plt.show()
+    xnew = np.linspace(0, (end - step - 1) / 10, 200)
+    func_s = interpolate.interp1d(comfort_level_c[:, 0] / 10., comfort_level_c[:, 1], kind='slinear')
+    func_a = interpolate.interp1d(comfort_level_a[:, 0] / 10., comfort_level_a[:, 1], kind='slinear')
+    func_d = interpolate.interp1d(comfort_level_m[:, 0] / 10., comfort_level_m[:, 1], kind='slinear')
+
+    ynew_s = func_s(xnew)
+    ynew_a = func_a(xnew)
+    ynew_d = func_d(xnew)
+
+    # func_s_ = interpolate.interp1d(xnew, ynew_s, kind='cubic')
+    # func_a_ = interpolate.interp1d(xnew, ynew_a, kind='cubic')
+    # func_d_ = interpolate.interp1d(xnew, ynew_d, kind='cubic')
+    #
+    # xnew = np.arange(0, end/10, 0.01)
+    # ynew_s = func_s_(xnew)
+    # ynew_a = func_a_(xnew)
+    # ynew_d = func_d_(xnew)
+
+    # plt.plot(xnew, ynew_s, color="green")
+    # plt.plot(xnew, ynew_a, color="orange")
+    # plt.plot(xnew, ynew_d, color="red")
+    # plt.ylim(0, 1.1)
+    # plt.show()
+
+    ynew_s = savitzky_golay(ynew_s, 21, order=2)
+    ynew_a = savitzky_golay(ynew_a, 21, order=2)
+    ynew_d = savitzky_golay(ynew_d, 21, order=2)
+
+    plt.figure(figsize=(16, 7))
+    plt.plot(xnew, np.clip(ynew_s, 0., 1.), color="green", label="Comfortable", linewidth=2)
+    plt.fill_between(xnew, 0, np.clip(ynew_s, 0., 1.), alpha=0.2, facecolor='green')
+
+    plt.plot(xnew, np.clip(ynew_a, 0., 1.), color="orange", label="Moderate", linewidth=2)
+    plt.fill_between(xnew, 0, np.clip(ynew_a, 0., 1.), alpha=0.2, facecolor='orange')
+
+    plt.plot(xnew, np.clip(ynew_d, 0., 1.), color="red", label="Radical", linewidth=2)
+    plt.fill_between(xnew, 0, np.clip(ynew_d, 0., 1.), alpha=0.2, facecolor='red')
+
+    plt.title('Passenger Comfort Assessment', fontdict=title_font_dict)
+    plt.xlabel('Time (s)', fontdict=axis_font_dict)
+    plt.ylabel('Score', fontdict=axis_font_dict)
+    plt.tick_params(labelsize=20)
+    plt.legend(prop=legend_font)
+    plt.ylim(0., 1.)
+    left, right = plt.xlim()
+    plt.xlim(0., right)
+    plt.show()
+
+
+def plot_vel_acc_rdis(vel, acc, rdis):
+    title_font_dict = {'family': 'Times New Roman',
+                       'color': 'black',
+                       'weight': 'normal',
+                       'fontsize': 15}
+
+    axis_font_dict = {'family': 'Times New Roman',
+                      'color': 'black',
+                      'weight': 'normal',
+                      'fontsize': 30}
+    legend_font = {'family': 'Times New Roman',
+                   'weight': 'normal',
+                   'size': 10,
+                   }
+    vel_x = np.array(vel)[:, 0]/10.
+    vel_y = np.array(vel)[:, 1]
+
+    acc_x = np.array(acc)[:, 0]/10.
+    acc_y = np.array(acc)[:, 1]
+
+    rdis_x = np.array(rdis)[:, 0]/10.
+    rdis_y = np.array(rdis)[:, 1]
+
+
+    fig  = plt.figure(figsize=(10, 3.5), dpi=200)
+
+    vel_axes = HostAxes(fig, [0.05, 0.1, 0.8, 0.8])
+    acc_axes = ParasiteAxes(vel_axes, sharex=vel_axes)
+    rdis_axes = ParasiteAxes(vel_axes, sharex=vel_axes)
+    vel_axes.parasites.append(acc_axes)
+    vel_axes.parasites.append(rdis_axes)
+
+    vel_axes.set_ylabel('Velocity (m/s)')
+    vel_axes.set_xlabel('Time (s)')
+
+    vel_axes.axis['right'].set_visible(False)
+    acc_axes.axis['right'].set_visible(True)
+
+    acc_axes.set_ylabel('Acceleration (m/s^2)')
+
+    acc_axes.axis['right'].major_ticklabels.set_visible(True)
+    acc_axes.axis['right'].label.set_visible(True)
+
+    rdis_axes.set_ylabel('Relative distance (m)')
+    offset = (60, 0)
+    new_axisline = rdis_axes._grid_helper.new_fixed_axis
+    rdis_axes.axis['right2'] = new_axisline(loc='right', axes=rdis_axes, offset=offset)
+
+    fig.add_axes(vel_axes)
+
+    p1, = vel_axes.plot(vel_x, vel_y, label="Vel", linewidth=2)
+    p2, = acc_axes.plot(acc_x, acc_y, label="Acc", linewidth=2)
+    p3, = rdis_axes.plot(rdis_x, rdis_y, label="RD", linewidth=2)
+
+    vel_axes.legend(prop=legend_font)
+
+    vel_axes.set_ylim(0, np.max(vel_y)+1)
+    vel_axes.set_xlim(0, np.max(vel_x))
+    rdis_axes.set_ylim(0, np.max(rdis_y)+1)
+
+    # plt.plot(vel_x, vel_y, color="green", label="Velocity", linewidth=2)
+    # plt.ylabel('Velocity (m/s)', fontdict=axis_font_dict)
+    #
+    # plt.plot(acc_x, acc_y, color="orange", label="Acceleration", linewidth=2, secondary_y=True)
+    # plt.ylabel('Acceleration (m/s^2)', fontdict=axis_font_dict)
+    #
+
+    plt.title('Kinematic information of host vehicle', fontdict=title_font_dict)
+    # plt.xlabel('Time (s)', fontdict=axis_font_dict)
+    # plt.ylabel('Likelihood', fontdict=axis_font_dict)
+    # plt.tick_params(labelsize=20)
+    plt.legend(prop=legend_font)
+
+
+    # plt.ylim(0., 1.)
+    # left, right = plt.xlim()
+    # plt.xlim(0., right)
+    plt.show()
+
 
 def control_host(host_vehicle):
     """ a controller control the host, if emergency event(Collision) would be happen, it would prevent it."""
@@ -218,18 +386,40 @@ def control_host(host_vehicle):
 
     last_error = 0.
     time_step = 0
-    emergency = False
+    emergency_control = False
+    pd_control = True
     thread_record_d = []
     thread_record_a = []
     thread_record_s = []
+
+    comfort_record_m = []
+    comfort_record_a = []
+    comfort_record_c = []
+
+    vel_record = []
+    acc_record = []
+    relative_distance_record = []
+    other = get_other(world)
     while True:
         ## record info
         pos = host_vehicle.get_location()
         velocity = host_vehicle.get_velocity()
+        velocity_ = math.sqrt(velocity.x**2 + velocity.y**2)
+        vel_record.append([time_step, velocity_])
         acc = host_vehicle.get_acceleration()
-        # logger.info('host_vehicle velocity:' + str(velocity) + ' acc:' + str(acc))
+        acc_record.append([time_step, -acc.x])
 
-        pos = host_vehicle.get_location()
+        comfort_scores = comfort_level_scores(-acc.x)
+        comfort_record_m.append([time_step, comfort_scores[0]])
+        comfort_record_a.append([time_step, comfort_scores[1]])
+        comfort_record_c.append([time_step, comfort_scores[2]])
+
+        other_pos = other.get_location()
+        other_velocity = other.get_velocity()
+
+        relative_distance_record.append([time_step, pos.distance(other_pos)])
+
+        # logger.info('host_vehicle velocity:' + str(velocity) + ' acc:' + str(acc))
         distance_collision = pos.distance(carla.Location(x=-77.5, y=-3., z=pos.z))
         # logger.info('remaining distance:' + str(distance_collision))
 
@@ -237,48 +427,83 @@ def control_host(host_vehicle):
         ego_v_state = ego_v.ego_vehicle()
         ego_v_state.set_position(position=(pos.x, pos.y, pos.z))
         ego_v_state.set_linear(linear=(velocity.x, velocity.y, velocity.z))
-        ego_v_state.set_size(size=(1.3, 1.5, 3.))
+        ego_v_state.set_size(size=(1.6, 1.6, 3.2))
 
-        other = get_other(world)
-        other_pos = other.get_location()
-        other_velocity = other.get_velocity()
         road_obj_state = road_o.road_obj()
         road_obj_state.set_position(position=(other_pos.x, other_pos.y, other_pos.z))
         road_obj_state.set_linear(linear=(other_velocity.x, other_velocity.y, other_velocity.z))
-        road_obj_state.set_size(size=(1.3, 1.5, 3.))
+        road_obj_state.set_size(size=(1.6, 1.6, 3.2))
         score = _assess_one_obj_threat_score(ego_v_state, road_obj_state)
         degree = _score_2_threat_degree(score)
         thread_record_d.append([time_step, score[0]])
         thread_record_a.append([time_step, score[1]])
         thread_record_s.append([time_step, score[2]])
-        if degree == safety_degree.dangerous and score[0] >= 0.8:
-            emergency = True
-        # logger.info('threat degree for other vehicle:'+str(degree))
-        ## assess the situation
 
-        ## control
-        if collision_avoidance:
-            if not emergency:
-                throttle, last_error = pd_control_for_collision(velocity, distance_collision, last_error)
-                control = carla.VehicleControl(throttle=throttle)
-            else:
-                control = carla.VehicleControl(brake=1.)
-                v = math.sqrt(velocity.x**2+velocity.y**2)
-                if v < 0.1:
-                    logger.info('Stop testing...')
-                    i = 0
-                    while (i<10):
-                        thread_record_d.append([time_step, score[0]])
-                        thread_record_a.append([time_step, score[1]])
-                        thread_record_s.append([time_step, score[2]])
-                        time_step += 1
-                        i += 1
-                        time.sleep(0.1)
-                    break
-        else:
+        if pd_control:
             throttle, last_error = pd_control_for_collision(velocity, distance_collision, last_error)
             control = carla.VehicleControl(throttle=throttle)
-        host_vehicle.apply_control(control)
+            host_vehicle.apply_control(control)
+
+        if emergency_control:
+            if degree == safety_degree.dangerous and score[0] >= 0.8:
+                # print('brake!!')
+                control = carla.VehicleControl(brake=1.)
+                host_vehicle.apply_control(control)
+            elif degree == safety_degree.safe and score[2] >= 0.8:
+                control = carla.VehicleControl(throttle=1.)
+                host_vehicle.apply_control(control)
+            else:
+                control = carla.VehicleControl(brake=1.)
+                host_vehicle.apply_control(control)
+
+        if pos.x < -100:
+            logger.info('Stop test...')
+            break
+
+        ## update the control state
+        if collision_avoidance and degree == safety_degree.dangerous and score[0] >= 0.8:
+            pd_control = False
+            emergency_control = True
+
+        #
+        #
+        # # logger.info('threat degree for other vehicle:'+str(degree))
+        # ## assess the situation
+        #
+        # ## control
+        # if collision_avoidance:
+        #     if not emergency_control:
+        #         throttle, last_error = pd_control_for_collision(velocity, distance_collision, last_error)
+        #         control = carla.VehicleControl(throttle=throttle)
+        #     else:
+        #         control = carla.VehicleControl(brake=1.)
+        #         if velocity_ < 0.01:
+        #             logger.info('Stop testing...')
+        #             i = 0
+        #             while (i<20):
+        #                 thread_record_d.append([time_step, 0])
+        #                 thread_record_a.append([time_step, 0])
+        #                 thread_record_s.append([time_step, 1])
+        #
+        #                 comfort_record_m.append([time_step, 0])
+        #                 comfort_record_a.append([time_step, 0])
+        #                 comfort_record_c.append([time_step, 1])
+        #
+        #                 vel_record.append([time_step, velocity_])
+        #                 acc_record.append([time_step, -acc.x])
+        #
+        #                 pos = get_host(world).get_location()
+        #                 other_pos = get_other(world).get_location()
+        #                 relative_distance_record.append([time_step, pos.distance(other_pos)])
+        #
+        #                 time_step += 1
+        #                 i += 1
+        #                 time.sleep(0.1)
+        #             break
+        # else:
+        #     throttle, last_error = pd_control_for_collision(velocity, distance_collision, last_error)
+        #     control = carla.VehicleControl(throttle=throttle)
+        # host_vehicle.apply_control(control)
 
 
         # if distance_collision > 10:
@@ -291,6 +516,8 @@ def control_host(host_vehicle):
         time_step += 1
 
     plot_threat_curve(thread_record_d, thread_record_a, thread_record_s)
+    plot_vel_acc_rdis(vel_record, acc_record, relative_distance_record)
+    plot_comfort_curve(comfort_record_m, comfort_record_a, comfort_record_c)
 
 
 
@@ -314,8 +541,8 @@ def control_other(other_vehicle):
 if __name__ == '__main__':
     ##############################
     ####### general config #######
-    other_vehicle_init_pos = random.randint(40, 90)
-    other_vehicle_speed_range = (random.uniform(0.6, 0.9), random.uniform(0.9, 1.))
+    other_vehicle_init_pos = random.randint(40, 50)
+    other_vehicle_speed_range = (random.uniform(0.3, 0.5), random.uniform(0.5, 0.6))
     ##############################
 
     #### carla world init ####
@@ -355,8 +582,8 @@ if __name__ == '__main__':
     logger.info('host vehicle location: '+str(get_host(world).get_location()))
     logger.info('other vehicle location: '+str(get_other(world).get_location()))
     logger.info('other vehicle throttle range: '+str(other_vehicle_speed_range))
-    logger.info('The test will start in 1 seconds, notice the Carla screen!!')
-    time.sleep(1)
+    logger.info('The test will start in 10 seconds, notice the Carla screen!!')
+    time.sleep(10)
 
     logger.info('Start testing...')
     control_host_t = threading.Thread(target=control_host, args=(get_host(world),))
